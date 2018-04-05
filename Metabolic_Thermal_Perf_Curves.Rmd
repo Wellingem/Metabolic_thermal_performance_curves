@@ -1,0 +1,114 @@
+---
+title: "Metabolic_Thermal_Perf_Curves"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Simulate data for project code:
+```{r}
+set.seed(40)
+x1 <- runif(40, min = 20, max = 34)
+epsilon <- rnorm(40, mean = 0, sd = 1)
+y <- x1^2 + epsilon
+
+plot(y ~ x1)
+```
+
+
+#Maximum Likelihood Approaches
+Using maximum likelihood approaches, we can get fit models and get an idea of how well they fit the data.
+
+```{r}
+#Building a max likelihood approach for a linear model
+
+Linear_max <- function(p, X, Y) {
+  b0 <- p[1]; b1 <- p[2]; sd <- p[3]
+  
+  rsd <- (b0 + b1*X ) - Y
+  
+  -sum(dnorm(rsd, mean = 0, sd = sd, log = T)) 
+}
+
+linear_optim <- optim(c(1, 0, 5), Linear_max, X = x1, Y = y)
+linear_optim
+```
+
+```{r}
+#Max likelihood for Quadratic
+
+Quadratic_max <- function(p, X, Y) {
+  a <- p[1]; b <- p[2]; c <- p[3]
+  
+  rsd2 <- (a*(X^2) + b*X + c) - Y
+  
+  -sum(dexp(rsd2, rate = X/Y, log = T))
+}
+
+quadratic_optim <- optim(c(1, 1, 1), Quadratic_max, X = x1, Y = y)
+quadratic_optim
+```
+
+```{r}
+#Maximum likelihood for Gaussian
+
+Gaussian_max <- function(p, X, Y) {
+  a <- p[1]; b <- p[2]; c <- p[3]; sd <- p[4]
+  
+  rsd3 <- a * (exp( ((-0.5) * ((abs(X - b)) / c )^2))) - Y
+  
+  -sum(dnorm(rsd3, mean = 0, sd = sd, log = T)) 
+}
+
+gaussian_optim <- optim(c(0, 0, 0, 1), Gaussian_max, X = x1, Y = y)
+gaussian_optim
+```
+```{r}
+#Maximum Likelihood for modified Gaussian
+
+modGaussian_max <- function(p, X, Y) {
+  a <- p[1]; b <- p[2]; c <- p[3]; d <- p[4]; sd <- p[5]
+  
+  rsd4 <- a * (exp( ((-0.5) * ((abs(X - b)) / c )^d))) - Y
+  
+  -sum(dnorm(rsd4, mean = 0, sd = sd, log = T)) 
+}
+
+modgaussian_optim <- optim(c(0, 0, 0, 2, 1), modGaussian_max, X = x1, Y = y)
+modgaussian_optim
+```
+```{r}
+#Maximum Likelihood for Weibull 
+
+Weibull_max <- function(p, X, Y) {
+  a <- p[1]; b <- p[2]; c <- p[3]; d <- p[4]
+  
+  rsd5 <- (a * (((d - 1) / d)^((1 - d) / d)) * (((X - b) / c) + ((d - 1) / d)^(1 / d))^(d - 1) *     (exp(-(((X - b) / c) + ((d - 1) / d)^(1 / d))^d)) ) + ((d-1) / d)
+  
+  -sum(dexp(rsd5, rate = X/Y, log = T)) 
+}
+
+weibull_optim <- optim(c(1, 1, 1, 2), Weibull_max, X = x1, Y = y)
+weibull_optim
+```
+
+Collecting the log-likelihood values and numbers of parameters into a vector:
+
+```{r}
+mod_LLs <- c(linear_optim$value, quadratic_optim$value, gaussian_optim$value, modgaussian_optim$value, weibull_optim$value)
+
+mod_pars <- c(length(linear_optim$par), length(quadratic_optim$par), length(gaussian_optim$par), length(modgaussian_optim$par), length(weibull_optim$par))
+```
+
+
+Calculate AIC values to take into account not only likelihood ratio, but also the complexity
+(number of parameters) in the model:
+
+```{r}
+mod_AICs <- (2 * log(mod_LLs)) + 2 * (mod_pars)
+
+mod_AICs
+```
+
