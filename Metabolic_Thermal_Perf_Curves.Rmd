@@ -6,7 +6,8 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-Brief INTRO
+#Metabolism and Temperature
+This code is for a project looking into the effect of high temperatures on juvenile red drum metabolism. This section focuses on fitting thermal performance curve models onto aerobic metabolism data.
 
 
 Simulate some data for running and testing code. The data will have a quadratic structure in the simulation.
