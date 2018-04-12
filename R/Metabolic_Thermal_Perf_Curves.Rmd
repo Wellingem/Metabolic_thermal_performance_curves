@@ -32,6 +32,7 @@ raw_plot
 
 #Maximum Likelihood Approaches
 Using maximum likelihood approaches, we can get fit models and get an idea of how well they fit the data. Using the optim() function, we can optimize the parameters of each function for the data.
+Optim() will give few objects in its read out. The important numbers to attention to are: par--the estimated parameters and value--the log-likelihood value (how likely it is that the model fits the data).
 
 ```{r}
 #Maximum likelihood approach using a linear model
@@ -117,13 +118,13 @@ mod_pars <- c(length(linear_optim$par), length(quadratic_optim$par), length(gaus
 ```
 
 
-Calculate AIC values to take into account not only likelihood ratio, but also the complexity
-(number of parameters) in the model:
+Calculate AIC values to take into account not only likelihood ratio, but also the complexity (number of parameters) in the model. The lowest AIC is the best fit for the data, but AICs with 2 of each other are not considered different fits.
 
 ```{r}
 mod_AICs <- (2 * log(mod_LLs)) + 2 * (mod_pars)
 
 mod_AICs
+#From the AICs, the linear and quadratic functions fit the data best.
 ```
 
 #Graphing the data with the models fit
