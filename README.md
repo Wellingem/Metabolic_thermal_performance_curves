@@ -1,6 +1,9 @@
 ## Metabolic_thermal_performance_curves
 This project is part of a larger project investigating the effects of high temperatures on juvenile red drum metabolism. This portion focuses on the aerobic metabolic data. It fits commonly used thermal performance curve models (linear, quadratic, Gaussian, modified Gaussian, and Weibull) to metabolic performance data. Aerobic scope is the performance metric used here. Aerobic scope is theoretically the total amount of aerobic metabolism available to use. It is found by subtracting the base metabolic needs from the maximum metabolic rate. 
 
+## Project Objective
+Find the best model to fit the data. After finding the best model, thermal range and critical temperatures can be estimated for juvenile red drum in the Charleston Harbor.
+
 ## Metabolic Methods Overview
 All metabolic data has been taken using computerized intermittent flow respirometry. Base metabolic rate is measured overnight, and maximum metabolic rate is taken after exhaustive exercise. 
 
