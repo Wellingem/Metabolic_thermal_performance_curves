@@ -1,0 +1,150 @@
+---
+title: "Metabolic_Thermal_Perf_Curves"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Metabolism and Temperature
+This code is for a project looking into the effect of high temperatures on juvenile red drum metabolism. This section focuses on fitting thermal performance curve models onto aerobic metabolism data.
+
+
+Simulate some data for running and testing code. The data will have a quadratic structure in the simulation.
+```{r}
+#simulate random data
+set.seed(40)
+x1 <- runif(40, min = 20, max = 34)
+epsilon <- rnorm(40, mean = 0, sd = 1)
+y <- x1^2 + epsilon
+
+#put it into a dataframe
+raw_data <- data.frame(x1, y)
+
+#Plot raw data
+library(ggplot2)
+
+raw_plot <- ggplot(raw_data, aes(x1, y)) + geom_point() + theme_classic() + xlab('Temperature') +      ylab('Metabolic Rate')
+
+raw_plot
+```
+
+
+#Maximum Likelihood Approaches
+Using maximum likelihood approaches, we can get fit models and get an idea of how well they fit the data. Using the optim() function, we can optimize the parameters of each function for the data.
+Optim() will give few objects in its read out. The important numbers to attention to are: par--the estimated parameters and value--the log-likelihood value (how likely it is that the model fits the data).
+
+```{r}
+#Maximum likelihood approach using a linear model
+
+Linear_max <- function(p, X, Y) {
+  b0 <- p[1]; b1 <- p[2]; sd <- p[3]
+  
+  rsd <- (b0 + b1 * X ) - Y
+  
+  -sum(dnorm(rsd, mean = 0, sd = sd, log = T)) 
+}
+
+linear_optim <- optim(c(1, 0, 5), Linear_max, X = x1, Y = y)
+linear_optim
+```
+
+```{r}
+#Maximum likelihood approach for the quadratic function
+
+Quadratic_max <- function(p, X, Y) {
+  a <- p[1]; b <- p[2]; c <- p[3]
+  
+  rsd2 <- (a * (X^2) + b * X + c) - Y
+  
+  -sum(dexp(rsd2, rate = X/Y, log = T))
+}
+
+quadratic_optim <- optim(c(1, 1, 1), Quadratic_max, X = x1, Y = y)
+quadratic_optim
+```
+
+```{r}
+#Maximum likelihood approach for the Gaussian function
+
+Gaussian_max <- function(p, X, Y) {
+  a <- p[1]; b <- p[2]; c <- p[3]; sd <- p[4]
+  
+  rsd3 <- a * (exp( ((-0.5) * ((abs(X - b)) / c )^2))) - Y
+  
+  -sum(dnorm(rsd3, mean = 0, sd = sd, log = T)) 
+}
+
+gaussian_optim <- optim(c(0, 0, 0, 1), Gaussian_max, X = x1, Y = y)
+gaussian_optim
+```
+```{r}
+#Maximum likelihood approach for the modified Gaussian function
+
+modGaussian_max <- function(p, X, Y) {
+  a <- p[1]; b <- p[2]; c <- p[3]; d <- p[4]; sd <- p[5]
+  
+  rsd4 <- a * (exp( ((-0.5) * ((abs(X - b)) / c )^d))) - Y
+  
+  -sum(dnorm(rsd4, mean = 0, sd = sd, log = T)) 
+}
+
+modgaussian_optim <- optim(c(0, 0, 0, 2, 1), modGaussian_max, X = x1, Y = y)
+modgaussian_optim
+```
+```{r}
+#Maximum likelihood approach for the Weibull function
+
+Weibull_max <- function(p, X, Y) {
+  a <- p[1]; b <- p[2]; c <- p[3]; d <- p[4]; sd <- p[5]
+  
+  rsd5 <- ((a * (((d - 1) / d)^((1 - d) / d)) * (((X - b) / c) + ((d - 1) / d)^(1 / d))^(d - 1) *     (exp(-(((X - b) / c) + ((d - 1) / d)^(1 / d))^d)) ) + ((d-1) / d) ) - Y
+  
+  -sum(dnorm(rsd5, mean = 0, sd = sd, log = T)) 
+}
+
+weibull_optim <- optim(c(1, 1, 1, 2, 1), Weibull_max, X = x1, Y = y)
+weibull_optim
+```
+
+Collecting the log-likelihood values and numbers of parameters into a vector:
+
+```{r}
+#Likelihood values (mod_LLs)
+mod_LLs <- c(linear_optim$value, quadratic_optim$value, gaussian_optim$value, modgaussian_optim$value, weibull_optim$value)
+
+#Number of model parameters for each model above (mod_pars)
+mod_pars <- c(length(linear_optim$par), length(quadratic_optim$par), length(gaussian_optim$par), length(modgaussian_optim$par), length(weibull_optim$par))
+```
+
+
+Calculate AIC values to take into account not only likelihood ratio, but also the complexity (number of parameters) in the model. The lowest AIC is the best fit for the data, but AICs with 2 of each other are not considered different fits.
+
+```{r}
+mod_AICs <- (2 * log(mod_LLs)) + 2 * (mod_pars)
+
+mod_AICs
+#From the AICs, the linear and quadratic functions fit the data best.
+```
+
+#Graphing the data with the models fit
+We can look at the two best models (linear and quadratic) with the data. First, set up the functions with the parameters estimated by the MLE.
+
+```{r}
+#Linear Model
+linear_eq <- function(x) (linear_optim$par[2] * x) + linear_optim$par[1]
+
+#Quadratic Model
+quadratic_eq <- function(x) (quadratic_optim$par[1] * (x^2)) + (quadratic_optim$par[2] * x) +   quadratic_optim$par[3] 
+```
+
+
+Now, layer them onto the plot with the raw data.
+
+```{r}
+model_plot <- raw_plot + stat_function(fun = linear_eq, color = 'blue') + stat_function(fun = quadratic_eq, color = 'red') 
+
+model_plot 
+```
+
+
